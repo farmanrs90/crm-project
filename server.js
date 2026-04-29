@@ -14,6 +14,7 @@ const routerEnrollment = require('./modules/enrollment/enrollment.routes');
 const routerPaymentPlan = require('./modules/payment/paymentPlan.routes');
 const routerPayment = require('./modules/payment/payment.routes');
 const auth = require('./modules/auth/auth.routes');
+const teacherRouter = require('./modules/teacher/teacher.routes');
 const dashboardRouter = require('./modules/dashboard/dashboard.routes');
 
 
@@ -29,6 +30,7 @@ app.use('/api/students', routerStudent);
 app.use('/api/courses', coursesrouter);
 app.use('/api/users', routerUser);
 app.use('/api/groups', routerGroup);
+app.use('/api/teachers', teacherRouter);
 app.use('/api/auth', auth);
 const Port = process.env.PORT || 5000;
 

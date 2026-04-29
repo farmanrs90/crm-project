@@ -10,6 +10,7 @@ const Student = require('../modules/student/student.model');
 const Group = require('../modules/groups/group.model');
 const Enrollment = require('../modules/enrollment/enrollment.model');
 const Payment = require('../modules/payment/payment.model');
+const Teacher = require('../modules/teacher/teacher.model');
 
 const SALT_ROUNDS = 10;
 
@@ -19,7 +20,8 @@ const demo = {
     { name: 'Teacher User', email: 'teacher@example.com', password: 'Teacher12345', role: 'teacher' },
     { name: 'Manager User', email: 'manager@example.com', password: 'Manager12345', role: 'manager' },
     { name: 'Accountant User', email: 'accountant@example.com', password: 'Accountant12345', role: 'accountant' },
-    { name: 'Student User', email: 'student@example.com', password: 'Student12345', role: 'student' }
+    { name: 'Student User', email: 'student@example.com', password: 'Student12345', role: 'student' },
+    { name: 'Teacher User 2', email: 'teacher2@example.com', password: 'Teacher12345', role: 'teacher' }
   ],
   courses: [
     {
@@ -42,7 +44,12 @@ const demo = {
   paymentPlans: [
     { planType: 'full', totalAmount: 1000, discountAmount: 100, note: 'Full payment plan', isActive: true },
     { planType: 'installments', totalAmount: 1200, discountAmount: 0, note: '6 month installment plan', isActive: true }
-  ]
+  ],
+  teachers: [
+    { name: 'John Doe', email: 'john.doe@example.com', password: 'Teacher12345' },
+    { name: 'Jane Smith', email: 'jane.smith@example.com', password: 'Teacher12345' }
+  ],
+ 
 };
 
 async function resetCollections() {
@@ -54,7 +61,9 @@ async function resetCollections() {
     Lead.deleteMany({}),
     PaymentPlan.deleteMany({}),
     Course.deleteMany({}),
-    User.deleteMany({})
+    User.deleteMany({}),
+    Teacher.deleteMany({})
+
   ]);
 }
 
@@ -80,10 +89,25 @@ async function seed() {
   const courses = await Course.insertMany(demo.courses);
   const paymentPlans = await PaymentPlan.insertMany(demo.paymentPlans);
 
-  const teacher = users.find((user) => user.role === 'teacher');
+  const teacherUsers = users.filter((user) => user.role === 'teacher');
   const manager = users.find((user) => user.role === 'manager');
   const studentUser = users.find((user) => user.role === 'student');
   const accountant = users.find((user) => user.role === 'accountant');
+
+  // Create Teacher documents (separate profile from User)
+  const teachers = await Teacher.insertMany(demo.teachers.map((t, i) => {
+    const nameParts = (t.name || '').split(' ');
+    return {
+      user: teacherUsers[i] ? teacherUsers[i]._id : undefined,
+      firstName: nameParts[0] || t.name,
+      lastName: nameParts.slice(1).join(' ') || '',
+      email: t.email || (t.name || '').replace(/\s+/g, '.').toLowerCase() + '@example.com',
+      phone: t.phone || '',
+      subjects: t.subjects || [],
+      courses: t.courses || [],
+      isActive: true
+    };
+  }));
 
   const leads = await Lead.insertMany([
     {
@@ -126,7 +150,7 @@ async function seed() {
     {
       name: 'JS-Group-A',
       course: courses[0]._id,
-      teacher: teacher._id,
+      teacher: teachers[0] ? teachers[0]._id : undefined,
       startDate: new Date('2026-05-01T00:00:00.000Z'),
       endDate: new Date('2026-08-01T00:00:00.000Z'),
       capacity: 15,
@@ -135,10 +159,19 @@ async function seed() {
     {
       name: 'FullStack-Group-A',
       course: courses[1]._id,
-      teacher: teacher._id,
+      teacher: teachers[0] ? teachers[0]._id : undefined,
       startDate: new Date('2026-06-01T00:00:00.000Z'),
       endDate: new Date('2026-12-01T00:00:00.000Z'),
       capacity: 12,
+      isActive: true
+    },
+    {
+      name: 'JS-Group-B',
+      course: courses[0]._id,
+      teacher: teachers[0] ? teachers[0]._id : undefined,
+      startDate: new Date('2026-07-01T00:00:00.000Z'),
+      endDate: new Date('2026-10-01T00:00:00.000Z'),
+      capacity: 15,
       isActive: true
     }
   ]);
@@ -181,6 +214,24 @@ async function seed() {
       status: 'pending',
       note: 'Second installment pending',
       method: 'credit_card'
+    },
+    {
+      paymentPlan: paymentPlans[1]._id,
+      installmentNumber: 3,
+      amountPaid: 200,
+      dueDate: new Date('2026-08-15T00:00:00.000Z'),
+      status: 'pending',
+      note: 'Third installment pending',
+      method: 'cash'
+    },
+    {
+      paymentPlan: paymentPlans[1]._id,
+      installmentNumber: 4,
+      amountPaid: 200,
+      dueDate: new Date('2026-09-15T00:00:00.000Z'),
+      status: 'pending',
+      note: 'Fourth installment pending',
+      method: 'bank_transfer'
     }
   ]);
 
@@ -190,6 +241,7 @@ async function seed() {
     courses: courses.length,
     leads: leads.length,
     paymentPlans: paymentPlans.length,
+    teachers: teachers ? teachers.length : 0,
     students: students.length,
     groups: groups.length,
     enrollments: enrollments.length,
