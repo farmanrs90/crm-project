@@ -12,6 +12,10 @@ function generateToken(user) {
 }
 
 async function registerUserService({ name, email, password }) {
+  if (!name || !email || !password) {
+    throw new Error('name, email and password are required');
+  }
+
   const existing = await User.findOne({ email });
   if (existing) throw new Error('Email already in use');
 
@@ -20,7 +24,11 @@ async function registerUserService({ name, email, password }) {
   return { id: user._id, name: user.name, email: user.email };
 }
 
-async function loginUserService({ email, password }) {
+async function loginUserService({ email, password } = {}) {
+  if (!email || !password) {
+    throw new Error('email and password are required');
+  }
+
   const user = await User.findOne({ email });
   if (!user) throw new Error('Invalid credentials');
 

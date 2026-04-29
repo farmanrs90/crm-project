@@ -13,7 +13,7 @@ const {
 } = require('./payment.controller');
 routerPayment.post('/', auth, validate(paymentSchema), createPaymentController);
 routerPayment.get('/:id', auth, validateObjectId('id'), getPaymentByIdController);
-routerPayment.get('/', getAllPaymentsController);
-routerPayment.put('/:id', validateObjectId('id'), validate(paymentSchema), updatePaymentController);
-routerPayment.delete('/:id', validateObjectId('id'), deletePaymentController);
+routerPayment.get('/', auth, getAllPaymentsController);
+routerPayment.put('/:id', auth, validateObjectId('id'), validate(paymentSchema), updatePaymentController);
+routerPayment.delete('/:id', auth, validateObjectId('id'), deletePaymentController);
 module.exports = routerPayment;

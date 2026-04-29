@@ -3,6 +3,7 @@ const routerPaymentPlan = express.Router();
 const validateObjectId = require('../../common/middleware/validateObjectId');
 const { paymentPlanSchema } = require('./paymentPlan.validation');
 const validate = require('../../common/middleware/validate');
+const auth = require('../../common/middleware/auth');
 const {
     createPaymentPlanController,
     getPaymentPlanByIdController,
@@ -10,9 +11,9 @@ const {
     updatePaymentPlanController,
     deletePaymentPlanController
 } = require('./paymentPlan.controller');
-routerPaymentPlan.post('/', validate(paymentPlanSchema), createPaymentPlanController);
-routerPaymentPlan.get('/', getAllPaymentPlansController);
-routerPaymentPlan.get('/:planid', validateObjectId('planid'), getPaymentPlanByIdController);
-routerPaymentPlan.put('/:planid', validateObjectId('planid'), validate(paymentPlanSchema), updatePaymentPlanController);
-routerPaymentPlan.delete('/:planid', validateObjectId('planid'), deletePaymentPlanController);
+routerPaymentPlan.post('/', auth, validate(paymentPlanSchema), createPaymentPlanController);
+routerPaymentPlan.get('/', auth, getAllPaymentPlansController);
+routerPaymentPlan.get('/:id', auth, validateObjectId('planid'), getPaymentPlanByIdController);
+routerPaymentPlan.put('/:id', auth, validateObjectId('planid'), validate(paymentPlanSchema), updatePaymentPlanController);
+routerPaymentPlan.delete('/:id', auth, validateObjectId('planid'), deletePaymentPlanController);
 module.exports = routerPaymentPlan;

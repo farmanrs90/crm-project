@@ -14,10 +14,12 @@ const routerEnrollment = require('./modules/enrollment/enrollment.routes');
 const routerPaymentPlan = require('./modules/payment/paymentPlan.routes');
 const routerPayment = require('./modules/payment/payment.routes');
 const auth = require('./modules/auth/auth.routes');
+const dashboardRouter = require('./modules/dashboard/dashboard.routes');
 
 
 app.use(cors());
 app.use(express.json());
+app.use('/api/dashboard', dashboardRouter);
 
 app.use('/api/enrollments', routerEnrollment);
 app.use('/api/payments', routerPayment);
