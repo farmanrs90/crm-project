@@ -1,0 +1,13 @@
+const express = require('express');
+const routercourses = express.Router();
+const validateObjectId = require('../../common/middleware/validateObjectId');
+const coursesController = require('./courses.controller');
+const { courseSchema } = require('./courses.validation');
+const validate = require('../../common/middleware/validate');
+const {createCourse, getCourses, getCourseById, updateCourse, deleteCourse} = coursesController;
+routercourses.post('/', validate(courseSchema), createCourse);
+routercourses.get('/', getCourses);
+routercourses.get('/:id', validateObjectId('id'), getCourseById);
+routercourses.put('/:id', validateObjectId('id'), validate(courseSchema), updateCourse);
+routercourses.delete('/:id', validateObjectId('id'), deleteCourse);
+module.exports = routercourses;

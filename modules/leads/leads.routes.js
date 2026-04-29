@@ -1,0 +1,12 @@
+const express = require('express');
+const routerLeads = express.Router();
+const validateObjectId = require('../../common/middleware/validateObjectId');
+const {leadSchema} = require('./leads.validation');
+const validate = require('../../common/middleware/validate');
+const leadController = require('./leads.controller');
+routerLeads.post('/',validate(leadSchema), leadController.createLead);
+routerLeads.get('/', leadController.getLeads);
+routerLeads.get('/:id', validateObjectId('id'), leadController.getLeadById);
+routerLeads.put('/:id', validateObjectId('id'), validate(leadSchema), leadController.updateLead);
+routerLeads.delete('/:id', validateObjectId('id'), leadController.deleteLead);
+module.exports = routerLeads;
