@@ -1,4 +1,5 @@
 import { Navigate, Routes, Route } from 'react-router-dom';
+import { useEffect } from 'react';
 import LoginForm from './pages/LoginForm';
 import Dashboard from './pages/Dashboard';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -7,8 +8,19 @@ import LeadsPage from './pages/leads/LeadsPage';
 import StudentsPage from './pages/students/StudentsPage';
 import CoursesPage from './pages/courses/CoursesPage';
 import SettingsPage from './pages/settings/SettingsPage';
+import { useAuthStore } from './store/authStore';
 
 function App() {
+  const { token, getCurrentUser } = useAuthStore();
+
+  useEffect(() => {
+    if (token) {
+      getCurrentUser().catch(() => {
+        // Token invalid or expired
+      });
+    }
+  }, [token, getCurrentUser]);
+
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/dashboard" replace />} />

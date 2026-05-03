@@ -9,4 +9,7 @@ export const authApi = {
   login: (payload: LoginPayload) => {
     return api.post('/auth/login', payload);
   },
+  getCurrentUser: () => {
+    return api.get('/auth/me');
+  },
 };

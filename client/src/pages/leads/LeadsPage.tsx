@@ -23,23 +23,21 @@ export default function LeadsPage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const loadLeads = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await leadService.getAll();
-      setItems(res.data || []);
-    } catch (err: unknown) {
-      setError(getApiErrorMessage(err, 'Failed to load leads'));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
+   const loadLeads = async () => {
+   setLoading(true);
+   setError(null);
+   try {
+     const res = await leadService.getAll();
+     setItems(res.data || []);
+   } catch (err: unknown) {
+     setError(getApiErrorMessage(err, 'Failed to load leads'));
+   } finally {
+     setLoading(false);
+   }
+ };
+  useEffect(() => {   
     loadLeads();
-  }, []);
+    }, []);
 
   const handleChange = (field: keyof LeadPayload, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));

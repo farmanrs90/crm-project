@@ -48,6 +48,17 @@ export const useAuthStore = create<AuthState>((set) => ({
     localStorage.removeItem('token');
     set({ token: null, user: null, isAuthenticated: false });
   },
+  getCurrentUser: async () => {
+    try {
+      const res = await authApi.getCurrentUser();
+      const user = res?.data || null;
+      set({ user });
+      return res;
+    } catch (error) {
+      set({ user: null, isAuthenticated: false });
+      throw error;
+    }
+  },
 }));
 
 export default useAuthStore;

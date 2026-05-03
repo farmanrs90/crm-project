@@ -1,8 +1,10 @@
 const express = require('express');
 const routerAuth = express.Router();
-const{registerUserController, loginUserController}=require('./auth.controller');
+const{registerUserController, loginUserController, getCurrentUserController}=require('./auth.controller');
 const { registerSchema, loginSchema } = require('./auth.validation');
 const validate=require('../../common/middleware/validate');
+const authMiddleware=require('../../common/middleware/auth');
 routerAuth.post('/register', validate(registerSchema), registerUserController);
 routerAuth.post('/login', validate(loginSchema), loginUserController);
+routerAuth.get('/me', authMiddleware, getCurrentUserController);
 module.exports=routerAuth;
