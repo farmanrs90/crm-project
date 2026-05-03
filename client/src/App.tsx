@@ -1,16 +1,31 @@
-import { Routes, Route } from 'react-router-dom';
+import { Navigate, Routes, Route } from 'react-router-dom';
 import LoginForm from './pages/LoginForm';
 import Dashboard from './pages/Dashboard';
 import ProtectedRoute from './components/ProtectedRoute';
+import Layout from './layout/Layout';
+import LeadsPage from './pages/leads/LeadsPage';
+import StudentsPage from './pages/students/StudentsPage';
+import CoursesPage from './pages/courses/CoursesPage';
+import SettingsPage from './pages/settings/SettingsPage';
 
 function App() {
   return (
     <Routes>
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="/login" element={<LoginForm />} />
+
       <Route element={<ProtectedRoute />}>
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route element={<Layout />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/leads" element={<LeadsPage />} />
+          <Route path="/students" element={<StudentsPage />} />
+          <Route path="/courses" element={<CoursesPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+        </Route>
       </Route>
-      </Routes>
+
+      <Route path="*" element={<Navigate to="/login" replace />} />
+    </Routes>
   );
 }
 
