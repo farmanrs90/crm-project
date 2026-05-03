@@ -1,17 +1,16 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import Login from './pages/Login';
+import { Routes, Route } from 'react-router-dom';
+import LoginForm from './pages/LoginForm';
 import Dashboard from './pages/Dashboard';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<Login />} />
+    <Routes>
+      <Route path="/login" element={<LoginForm />} />
+      <Route element={<ProtectedRoute />}>
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="*" element={<div>Not Found</div>} />
+      </Route>
       </Routes>
-    </BrowserRouter>
   );
 }
 
