@@ -8,6 +8,9 @@ import LeadsPage from './pages/leads/LeadsPage';
 import StudentsPage from './pages/students/StudentsPage';
 import CoursesPage from './pages/courses/CoursesPage';
 import SettingsPage from './pages/settings/SettingsPage';
+import GroupsPage from './pages/groups/GroupsPage';
+import PaymentsPage from './pages/payments/PaymentsPage';
+import PaymentPlansPage from './pages/paymentPlans/PaymentPlansPage';
 import { useAuthStore } from './store/authStore';
 
 function App() {
@@ -32,6 +35,9 @@ function App() {
           <Route path="/leads" element={<LeadsPage />} />
           <Route path="/students" element={<StudentsPage />} />
           <Route path="/courses" element={<CoursesPage />} />
+          <Route path="/groups" element={<GroupsPage />} />
+          <Route path="/payments" element={<PaymentsPage />} />
+          <Route path="/payment-plans" element={<PaymentPlansPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
       </Route>

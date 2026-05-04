@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { studentService, type StudentPayload } from '../../services/studentService';
 import { getApiErrorMessage } from '../../utils/apiError';
 
@@ -16,6 +17,7 @@ export default function StudentsPage() {
   const [items, setItems] = useState<StudentItem[]>([]);
   const [form, setForm] = useState<StudentPayload>(emptyForm);
   const [editId, setEditId] = useState<string | null>(null);
+  const [selectedItem, setSelectedItem] = useState<StudentItem | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -45,6 +47,10 @@ export default function StudentsPage() {
     setEditId(null);
   };
 
+  const handleSelect = (item: StudentItem) => {
+    setSelectedItem(item);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -63,6 +69,7 @@ export default function StudentsPage() {
 
   const handleEdit = (item: StudentItem) => {
     setEditId(item._id);
+    setSelectedItem(item);
     setForm({
       user: item.user,
       lead: item.lead,
@@ -116,12 +123,12 @@ export default function StudentsPage() {
               </thead>
               <tbody>
                 {items.map((item) => (
-                  <tr key={item._id}>
+                  <tr key={item._id} className="cursor-pointer hover:bg-slate-50" onClick={() => handleSelect(item)}>
                     <td>{item.studentCode}</td>
                     <td>{item.status}</td>
                     <td className="flex gap-2">
-                      <button className="rounded-md border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50" onClick={() => handleEdit(item)}>Edit</button>
-                      <button className="rounded-md bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-500" onClick={() => handleDelete(item._id)}>Delete</button>
+                      <button className="rounded-md border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50" onClick={(e) => { e.stopPropagation(); handleEdit(item); }}>Edit</button>
+                      <button className="rounded-md bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-500" onClick={(e) => { e.stopPropagation(); handleDelete(item._id); }}>Delete</button>
                     </td>
                   </tr>
                 ))}
@@ -130,6 +137,25 @@ export default function StudentsPage() {
           </div>
         )}
       </div>
+
+      {selectedItem && (
+        <div className="rounded-xl border border-sky-200 bg-sky-50 p-4 shadow-sm">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900">Student Details</h3>
+              <p className="text-sm text-slate-600">Click a row to inspect the student</p>
+            </div>
+            <Link to="/students" className="text-sm font-medium text-sky-700">Open students page</Link>
+          </div>
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            <div><span className="text-xs uppercase text-slate-500">Student Code</span><p className="font-medium">{selectedItem.studentCode}</p></div>
+            <div><span className="text-xs uppercase text-slate-500">Status</span><p className="font-medium">{selectedItem.status}</p></div>
+            <div><span className="text-xs uppercase text-slate-500">User</span><p className="font-medium break-all">{selectedItem.user || '-'}</p></div>
+            <div><span className="text-xs uppercase text-slate-500">Lead</span><p className="font-medium break-all">{selectedItem.lead || '-'}</p></div>
+            <div><span className="text-xs uppercase text-slate-500">Enrollment Date</span><p className="font-medium">{selectedItem.enrollmentDate || '-'}</p></div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

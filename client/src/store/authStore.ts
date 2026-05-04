@@ -27,6 +27,7 @@ interface AuthState {
   login: (payload: LoginPayload) => Promise<LoginResponse>;
   logout: () => void;
   setUser: (u: User | null) => void;
+  getCurrentUser: () => Promise<LoginResponse>;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({

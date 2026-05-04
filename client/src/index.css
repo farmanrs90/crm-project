@@ -3,6 +3,16 @@
 
 :root {
 	color-scheme: light;
+	--app-bg: linear-gradient(180deg, #f8fbff 0%, #eef4ff 52%, #eef2f7 100%);
+	--app-text: #0f172a;
+	--app-selection: rgba(15, 23, 42, 0.16);
+}
+
+:root.dark {
+	color-scheme: dark;
+	--app-bg: linear-gradient(180deg, #020617 0%, #0f172a 52%, #111827 100%);
+	--app-text: #e5eefc;
+	--app-selection: rgba(148, 163, 184, 0.3);
 }
 
 html,
@@ -21,8 +31,8 @@ body {
 	background:
 		radial-gradient(circle at top left, rgba(59, 130, 246, 0.15), transparent 32%),
 		radial-gradient(circle at top right, rgba(14, 165, 233, 0.12), transparent 28%),
-		linear-gradient(180deg, #f8fbff 0%, #eef4ff 52%, #eef2f7 100%);
-	color: #0f172a;
+		var(--app-bg);
+	color: var(--app-text);
 }
 
 * {
@@ -30,5 +40,5 @@ body {
 }
 
 ::selection {
-	background: rgba(15, 23, 42, 0.16);
+	background: var(--app-selection);
 }

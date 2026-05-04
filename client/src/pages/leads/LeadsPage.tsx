@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { leadService, type LeadPayload } from '../../services/leadService';
 import { getApiErrorMessage } from '../../utils/apiError';
 
@@ -21,6 +22,7 @@ export default function LeadsPage() {
   const [items, setItems] = useState<LeadItem[]>([]);
   const [form, setForm] = useState<LeadPayload>(emptyForm);
   const [editId, setEditId] = useState<string | null>(null);
+  const [selectedItem, setSelectedItem] = useState<LeadItem | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
    const loadLeads = async () => {
@@ -36,7 +38,18 @@ export default function LeadsPage() {
    }
  };
   useEffect(() => {   
-    loadLeads();
+    void (async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await leadService.getAll();
+        setItems(res.data || []);
+      } catch (err: unknown) {
+        setError(getApiErrorMessage(err, 'Failed to load leads'));
+      } finally {
+        setLoading(false);
+      }
+    })();
     }, []);
 
   const handleChange = (field: keyof LeadPayload, value: string) => {
@@ -46,6 +59,10 @@ export default function LeadsPage() {
   const resetForm = () => {
     setForm(emptyForm);
     setEditId(null);
+  };
+
+  const handleSelect = (item: LeadItem) => {
+    setSelectedItem(item);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -66,6 +83,7 @@ export default function LeadsPage() {
 
   const handleEdit = (item: LeadItem) => {
     setEditId(item._id);
+    setSelectedItem(item);
     setForm({
       firstName: item.firstName,
       lastName: item.lastName,
@@ -131,14 +149,14 @@ export default function LeadsPage() {
               </thead>
               <tbody>
                 {items.map((item) => (
-                  <tr key={item._id}>
+                  <tr key={item._id} className="cursor-pointer hover:bg-slate-50" onClick={() => handleSelect(item)}>
                     <td>{item.firstName} {item.lastName}</td>
                     <td>{item.phone}</td>
                     <td>{item.email}</td>
                     <td>{item.status}</td>
                     <td className="flex gap-2">
-                      <button className="rounded-md border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50" onClick={() => handleEdit(item)}>Edit</button>
-                      <button className="rounded-md bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-500" onClick={() => handleDelete(item._id)}>Delete</button>
+                      <button className="rounded-md border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50" onClick={(e) => { e.stopPropagation(); handleEdit(item); }}>Edit</button>
+                      <button className="rounded-md bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-500" onClick={(e) => { e.stopPropagation(); handleDelete(item._id); }}>Delete</button>
                     </td>
                   </tr>
                 ))}
@@ -147,6 +165,29 @@ export default function LeadsPage() {
           </div>
         )}
       </div>
+
+      {selectedItem && (
+        <div className="rounded-xl border border-sky-200 bg-sky-50 p-4 shadow-sm">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900">Lead Details</h3>
+              <p className="text-sm text-slate-600">Click a row to inspect the lead</p>
+            </div>
+            <Link to="/leads" className="text-sm font-medium text-sky-700">Open leads page</Link>
+          </div>
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            <div><span className="text-xs uppercase text-slate-500">Name</span><p className="font-medium">{selectedItem.firstName} {selectedItem.lastName}</p></div>
+            <div><span className="text-xs uppercase text-slate-500">Phone</span><p className="font-medium">{selectedItem.phone}</p></div>
+            <div><span className="text-xs uppercase text-slate-500">Email</span><p className="font-medium">{selectedItem.email}</p></div>
+            <div><span className="text-xs uppercase text-slate-500">Status</span><p className="font-medium">{selectedItem.status}</p></div>
+            <div><span className="text-xs uppercase text-slate-500">Source</span><p className="font-medium">{selectedItem.source}</p></div>
+            <div><span className="text-xs uppercase text-slate-500">UTM Source</span><p className="font-medium">{selectedItem.utmSource || '-'}</p></div>
+            <div><span className="text-xs uppercase text-slate-500">Course Interested</span><p className="font-medium break-all">{selectedItem.courseInterested || '-'}</p></div>
+            <div><span className="text-xs uppercase text-slate-500">Assigned To</span><p className="font-medium break-all">{selectedItem.assignedTo || '-'}</p></div>
+            <div className="md:col-span-2"><span className="text-xs uppercase text-slate-500">Notes</span><p className="font-medium">{selectedItem.notes || '-'}</p></div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

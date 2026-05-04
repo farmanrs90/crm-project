@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { courseService, type CoursePayload } from '../../services/courseService';
 import { getApiErrorMessage } from '../../utils/apiError';
 
@@ -18,6 +19,7 @@ export default function CoursesPage() {
   const [items, setItems] = useState<CourseItem[]>([]);
   const [form, setForm] = useState<CoursePayload>(emptyForm);
   const [editId, setEditId] = useState<string | null>(null);
+  const [selectedItem, setSelectedItem] = useState<CourseItem | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,7 +37,18 @@ export default function CoursesPage() {
   };
 
   useEffect(() => {
-    loadCourses();
+    void (async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await courseService.getAll();
+        setItems(res.data || []);
+      } catch (err: unknown) {
+        setError(getApiErrorMessage(err, 'Failed to load courses'));
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
   const handleChange = (field: keyof CoursePayload, value: string | number | boolean) => {
@@ -45,6 +58,10 @@ export default function CoursesPage() {
   const resetForm = () => {
     setForm(emptyForm);
     setEditId(null);
+  };
+
+  const handleSelect = (item: CourseItem) => {
+    setSelectedItem(item);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -71,6 +88,7 @@ export default function CoursesPage() {
 
   const handleEdit = (item: CourseItem) => {
     setEditId(item._id);
+    setSelectedItem(item);
     setForm({
       name: item.name,
       category: item.category,
@@ -129,13 +147,13 @@ export default function CoursesPage() {
               </thead>
               <tbody>
                 {items.map((item) => (
-                  <tr key={item._id}>
+                  <tr key={item._id} className="cursor-pointer hover:bg-slate-50" onClick={() => handleSelect(item)}>
                     <td>{item.name}</td>
                     <td>{item.price}</td>
                     <td>{item.isActive ? 'Yes' : 'No'}</td>
                     <td className="flex gap-2">
-                      <button className="rounded-md border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50" onClick={() => handleEdit(item)}>Edit</button>
-                      <button className="rounded-md bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-500" onClick={() => handleDelete(item._id)}>Delete</button>
+                      <button className="rounded-md border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50" onClick={(e) => { e.stopPropagation(); handleEdit(item); }}>Edit</button>
+                      <button className="rounded-md bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-500" onClick={(e) => { e.stopPropagation(); handleDelete(item._id); }}>Delete</button>
                     </td>
                   </tr>
                 ))}
@@ -144,6 +162,26 @@ export default function CoursesPage() {
           </div>
         )}
       </div>
+
+      {selectedItem && (
+        <div className="rounded-xl border border-sky-200 bg-sky-50 p-4 shadow-sm">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900">Course Details</h3>
+              <p className="text-sm text-slate-600">Clicking a row opens the record details here</p>
+            </div>
+            <Link to="/courses" className="text-sm font-medium text-sky-700">Open courses page</Link>
+          </div>
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            <div><span className="text-xs uppercase text-slate-500">Name</span><p className="font-medium">{selectedItem.name}</p></div>
+            <div><span className="text-xs uppercase text-slate-500">Price</span><p className="font-medium">{selectedItem.price}</p></div>
+            <div><span className="text-xs uppercase text-slate-500">Duration</span><p className="font-medium">{selectedItem.durationMonths}</p></div>
+            <div><span className="text-xs uppercase text-slate-500">Active</span><p className="font-medium">{selectedItem.isActive ? 'Yes' : 'No'}</p></div>
+            <div className="md:col-span-2"><span className="text-xs uppercase text-slate-500">Description</span><p className="font-medium">{selectedItem.description}</p></div>
+            <div className="md:col-span-2"><span className="text-xs uppercase text-slate-500">Syllabus</span><p className="font-medium">{selectedItem.syllabus || '-'}</p></div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

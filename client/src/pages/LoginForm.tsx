@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
+import { getTranslation, languageLabels } from '../localization/translations';
+import { useUiStore } from '../store/uiStore';
 
 function LoginForm() {
   const [email, setEmail] = useState('');
@@ -9,6 +11,12 @@ function LoginForm() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const login = useAuthStore((s) => s.login);
+  const language = useUiStore((s) => s.language);
+  const theme = useUiStore((s) => s.theme);
+  const setLanguage = useUiStore((s) => s.setLanguage);
+  const toggleTheme = useUiStore((s) => s.toggleTheme);
+
+  const t = (key: string) => getTranslation(language, key);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,11 +29,11 @@ function LoginForm() {
       if (token) {
         navigate('/dashboard');
       } else {
-        setError('Login failed: no token returned');
+        setError(language === 'en' ? 'Login failed: no token returned' : language === 'az' ? 'Giriş uğursuz oldu: token qaytarılmadı' : 'Ошибка входа: токен не был возвращен');
       }
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } }; message?: string };
-      const msg = error?.response?.data?.message || error?.message || 'Login error';
+      const msg = error?.response?.data?.message || error?.message || (language === 'en' ? 'Login error' : language === 'az' ? 'Giriş xətası' : 'Ошибка входа');
       setError(msg);
     } finally {
       setLoading(false);
@@ -44,21 +52,40 @@ function LoginForm() {
           </div>
 
           <div className="relative z-10 flex h-full flex-col justify-between gap-10">
+            <div className="flex items-center justify-end gap-2">
+              <button type="button" onClick={toggleTheme} className="rounded-full border border-white/15 px-3 py-2 text-xs font-semibold text-white/90 transition hover:bg-white/10">
+                {theme === 'dark' ? t('dark') : t('light')}
+              </button>
+              <select
+                value={language}
+                onChange={(e) => setLanguage(e.target.value as 'en' | 'az' | 'ru')}
+                className="rounded-full border border-white/15 bg-white/10 px-3 py-2 text-xs font-semibold text-white outline-none"
+              >
+                {Object.entries(languageLabels).map(([code, label]) => (
+                  <option key={code} value={code} className="text-slate-900">{label}</option>
+                ))}
+              </select>
+            </div>
+
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sky-300">CRM Dashboard</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sky-300">{t('appName')}</p>
               <h1 className="mt-4 max-w-xl text-4xl font-extrabold leading-tight sm:text-5xl">
-                Manage your sales pipeline with clarity and speed.
+                {language === 'en' && 'Manage your sales pipeline with clarity and speed.'}
+                {language === 'az' && 'Satış prosesini aydın və sürətli şəkildə idarə et.'}
+                {language === 'ru' && 'Управляйте воронкой продаж ясно и быстро.'}
               </h1>
               <p className="mt-4 max-w-xl text-base leading-7 text-slate-300">
-                A clean workspace for leads, students, courses and daily operations. Built for fast teams and real growth.
+                {language === 'en' && 'A clean workspace for leads, students, courses and daily operations. Built for fast teams and real growth.'}
+                {language === 'az' && 'Müraciətlər, tələbələr, kurslar və gündəlik əməliyyatlar üçün səliqəli iş mühiti.'}
+                {language === 'ru' && 'Удобное пространство для лидов, студентов, курсов и ежедневных операций.'}
               </p>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-3">
               {[
-                ['Leads', '128'],
-                ['Students', '84'],
-                ['Courses', '12'],
+                [t('leads'), '128'],
+                [t('students'), '84'],
+                [t('courses'), '12'],
               ].map(([label, value]) => (
                 <div key={label} className="rounded-2xl border border-white/10 bg-white/5 p-4">
                   <p className="text-sm text-slate-300">{label}</p>
@@ -72,22 +99,22 @@ function LoginForm() {
         <section className="bg-white px-6 py-10 sm:px-10 lg:px-12">
           <div className="mx-auto flex max-w-md flex-col justify-center">
             <div className="mb-8">
-              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">Welcome back</p>
-              <h2 className="mt-3 text-3xl font-bold text-slate-900">Sign in to continue</h2>
+              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">{t('welcomeBack')}</p>
+              <h2 className="mt-3 text-3xl font-bold text-slate-900">{t('signInTitle')}</h2>
               <p className="mt-2 text-sm leading-6 text-slate-500">
-                Use your admin account to access the CRM workspace.
+                {t('signInSubtitle')}
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
-                <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+                  <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
                   {error}
                 </div>
               )}
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">Email address</label>
+                <label className="mb-2 block text-sm font-medium text-slate-700">{t('emailLabel')}</label>
                 <input
                   type="email"
                   placeholder="admin@example.com"
@@ -98,7 +125,7 @@ function LoginForm() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">Password</label>
+                <label className="mb-2 block text-sm font-medium text-slate-700">{t('passwordLabel')}</label>
                 <input
                   type="password"
                   placeholder="••••••••"
@@ -113,13 +140,13 @@ function LoginForm() {
                 disabled={loading}
                 className="w-full rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
               >
-                {loading ? 'Signing in...' : 'Login to CRM'}
+                {loading ? t('signingIn') : t('loginButton')}
               </button>
             </form>
 
             <div className="mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-              <p className="font-semibold text-slate-900">Tip</p>
-              <p className="mt-2 leading-6">Once you sign in, you’ll land on the dashboard with protected navigation and CRM modules.</p>
+              <p className="font-semibold text-slate-900">{t('tipTitle')}</p>
+              <p className="mt-2 leading-6">{t('tipText')}</p>
             </div>
           </div>
         </section>
