@@ -42,3 +42,9 @@ export const useUiStore = create<UiState>((set, get) => ({
     get().setTheme(nextTheme);
   },
 }));
+
+if (typeof document !== 'undefined') {
+  const initialTheme = useUiStore.getState().theme;
+  document.documentElement.classList.toggle('dark', initialTheme === 'dark');
+  document.documentElement.style.colorScheme = initialTheme;
+}

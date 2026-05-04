@@ -1,6 +1,7 @@
 import api from './api';
 
 export type PaymentPayload = {
+  lead?: string;
   paymentPlan: string;
   installmentNumber: number;
   amountPaid: number;

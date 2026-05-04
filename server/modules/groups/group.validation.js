@@ -16,4 +16,18 @@ const groupSchema = Joi.object({
   isActive: Joi.boolean().optional(),
 });
 
-module.exports = { groupSchema };
+const groupUpdateSchema = Joi.object({
+  name: Joi.string().min(2).max(100).trim().optional(),
+  course: objectId.optional().messages({
+    'string.pattern.base': 'Invalid course ID',
+  }),
+  teacher: objectId.optional().messages({
+    'string.pattern.base': 'Invalid teacher ID',
+  }),
+  startDate: Joi.date().optional(),
+  endDate: Joi.date().optional(),
+  capacity: Joi.number().integer().min(1).optional(),
+  isActive: Joi.boolean().optional(),
+}).min(1);
+
+module.exports = { groupSchema, groupUpdateSchema };

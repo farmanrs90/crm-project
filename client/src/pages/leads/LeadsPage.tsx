@@ -1,9 +1,17 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import api from '../../services/api';
 import { leadService, type LeadPayload } from '../../services/leadService';
+import { courseService } from '../../services/courseService';
 import { getApiErrorMessage } from '../../utils/apiError';
+import LeadAcceptanceModal from '../../components/LeadAcceptanceModal';
 
 type LeadItem = LeadPayload & { _id: string };
+
+type SelectOption = {
+  _id: string;
+  label: string;
+};
 
 const emptyForm: LeadPayload = {
   firstName: '',
@@ -19,31 +27,83 @@ const emptyForm: LeadPayload = {
 };
 
 export default function LeadsPage() {
+  const navigate = useNavigate();
   const [items, setItems] = useState<LeadItem[]>([]);
+  const [courses, setCourses] = useState<SelectOption[]>([]);
+  const [users, setUsers] = useState<SelectOption[]>([]);
   const [form, setForm] = useState<LeadPayload>(emptyForm);
   const [editId, setEditId] = useState<string | null>(null);
   const [selectedItem, setSelectedItem] = useState<LeadItem | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-   const loadLeads = async () => {
-   setLoading(true);
-   setError(null);
-   try {
-     const res = await leadService.getAll();
-     setItems(res.data || []);
-   } catch (err: unknown) {
-     setError(getApiErrorMessage(err, 'Failed to load leads'));
-   } finally {
-     setLoading(false);
-   }
- };
+  const [showAcceptanceModal, setShowAcceptanceModal] = useState(false);
+  const [acceptedLeadId, setAcceptedLeadId] = useState<string | null>(null);
+  const [modalLoading, setModalLoading] = useState(false);
+  const [acceptedLeadInfo, setAcceptedLeadInfo] = useState<{
+    name: string;
+    email: string;
+    phone: string;
+    course: string;
+  } | null>(null);
+
+  const extractId = (value: unknown) => {
+    if (!value) return '';
+    if (typeof value === 'string') return value;
+    if (typeof value === 'object' && '_id' in (value as Record<string, unknown>)) {
+      return String((value as { _id?: string })._id || '');
+    }
+    return '';
+  };
+
+  const loadLeads = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [leadsRes, coursesRes, usersRes] = await Promise.all([
+        leadService.getAll(),
+        courseService.getAll(),
+        api.get('/users'),
+      ]);
+
+      setItems(leadsRes.data || []);
+      setCourses((coursesRes.data || []).map((course: { _id: string; name?: string }) => ({
+        _id: course._id,
+        label: course.name || course._id,
+      })));
+      setUsers((usersRes.data || [])
+        .filter((user: { role?: string }) => ['admin', 'manager', 'accountant'].includes(user.role || ''))
+        .map((user: { _id: string; name?: string; email?: string }) => ({
+        _id: user._id,
+        label: user.name || user.email || user._id,
+      })));
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, 'Failed to load leads'));
+    } finally {
+      setLoading(false);
+    }
+  };
   useEffect(() => {   
     void (async () => {
       setLoading(true);
       setError(null);
       try {
-        const res = await leadService.getAll();
-        setItems(res.data || []);
+        const [leadsRes, coursesRes, usersRes] = await Promise.all([
+          leadService.getAll(),
+          courseService.getAll(),
+          api.get('/users'),
+        ]);
+
+        setItems(leadsRes.data || []);
+        setCourses((coursesRes.data || []).map((course: { _id: string; name?: string }) => ({
+          _id: course._id,
+          label: course.name || course._id,
+        })));
+        setUsers((usersRes.data || [])
+          .filter((user: { role?: string }) => ['admin', 'manager', 'accountant'].includes(user.role || ''))
+          .map((user: { _id: string; name?: string; email?: string }) => ({
+            _id: user._id,
+            label: user.name || user.email || user._id,
+          })));
       } catch (err: unknown) {
         setError(getApiErrorMessage(err, 'Failed to load leads'));
       } finally {
@@ -68,14 +128,35 @@ export default function LeadsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    const shouldRedirectToPayment = form.status === 'Accepted';
     try {
+      const payload: LeadPayload = {
+        ...form,
+        courseInterested: extractId(form.courseInterested),
+        assignedTo: extractId(form.assignedTo),
+      };
+
+      let savedLeadId = editId;
       if (editId) {
-        await leadService.update(editId, form);
+        const updated = await leadService.update(editId, payload);
+        savedLeadId = updated?.data?._id || editId;
       } else {
-        await leadService.create(form);
+        const created = await leadService.create(payload);
+        savedLeadId = created?.data?._id || null;
       }
       resetForm();
       await loadLeads();
+
+      if (shouldRedirectToPayment && savedLeadId) {
+        setAcceptedLeadId(savedLeadId);
+        setAcceptedLeadInfo({
+          name: `${form.firstName} ${form.lastName}`,
+          email: form.email,
+          phone: form.phone,
+          course: courses.find((c) => c._id === form.courseInterested)?.label || 'Seçilməmiş',
+        });
+        setShowAcceptanceModal(true);
+      }
     } catch (err: unknown) {
       setError(getApiErrorMessage(err, 'Failed to save lead'));
     }
@@ -91,8 +172,8 @@ export default function LeadsPage() {
       email: item.email,
       source: item.source,
       status: item.status,
-      courseInterested: item.courseInterested as string || '',
-      assignedTo: item.assignedTo as string || '',
+      courseInterested: extractId(item.courseInterested),
+      assignedTo: extractId(item.assignedTo),
       utmSource: item.utmSource || '',
       notes: item.notes || '',
     });
@@ -106,6 +187,23 @@ export default function LeadsPage() {
     } catch (err: unknown) {
       setError(getApiErrorMessage(err, 'Failed to delete lead'));
     }
+  };
+
+  const handleAcceptanceModalConfirm = () => {
+    setModalLoading(true);
+    setTimeout(() => {
+      if (acceptedLeadId) {
+        navigate(`/payments?lead=${acceptedLeadId}`);
+      }
+      setModalLoading(false);
+      setShowAcceptanceModal(false);
+    }, 800);
+  };
+
+  const handleAcceptanceModalCancel = () => {
+    setShowAcceptanceModal(false);
+    setAcceptedLeadId(null);
+    setAcceptedLeadInfo(null);
   };
 
   return (
@@ -126,8 +224,18 @@ export default function LeadsPage() {
         <select className="rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-slate-500" value={form.status} onChange={(e) => handleChange('status', e.target.value)}>
           <option>New</option><option>Contacted</option><option>Qualified</option><option>Lost</option><option>Accepted</option>
         </select>
-        <input className="rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-slate-500" placeholder="Course Interested (id)" value={form.courseInterested || ''} onChange={(e) => handleChange('courseInterested', e.target.value)} />
-        <input className="rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-slate-500" placeholder="Assigned To (id)" value={form.assignedTo || ''} onChange={(e) => handleChange('assignedTo', e.target.value)} />
+        <select className="rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-slate-500" value={form.courseInterested || ''} onChange={(e) => handleChange('courseInterested', e.target.value)}>
+          <option value="">Select course</option>
+          {courses.map((course) => (
+            <option key={course._id} value={course._id}>{course.label}</option>
+          ))}
+        </select>
+        <select className="rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-slate-500" value={form.assignedTo || ''} onChange={(e) => handleChange('assignedTo', e.target.value)}>
+          <option value="">Select assignee</option>
+          {users.map((user) => (
+            <option key={user._id} value={user._id}>{user.label}</option>
+          ))}
+        </select>
         <input className="rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-slate-500" placeholder="UTM Source" value={form.utmSource || ''} onChange={(e) => handleChange('utmSource', e.target.value)} />
         <textarea className="min-h-28 rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-slate-500 lg:col-span-2" placeholder="Notes" value={form.notes || ''} onChange={(e) => handleChange('notes', e.target.value)} />
         {error && <div className="text-sm text-error lg:col-span-2">{error}</div>}
@@ -166,16 +274,40 @@ export default function LeadsPage() {
         )}
       </div>
 
+      <LeadAcceptanceModal
+        isOpen={showAcceptanceModal}
+        leadName={acceptedLeadInfo?.name || ''}
+        leadEmail={acceptedLeadInfo?.email || ''}
+        leadPhone={acceptedLeadInfo?.phone || ''}
+        courseInterested={acceptedLeadInfo?.course || ''}
+        isLoading={modalLoading}
+        onConfirm={handleAcceptanceModalConfirm}
+        onCancel={handleAcceptanceModalCancel}
+      />
+
       {selectedItem && (
         <div className="rounded-xl border border-sky-200 bg-sky-50 p-4 shadow-sm">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center justify-between gap-3 mb-4">
             <div>
               <h3 className="text-lg font-semibold text-slate-900">Lead Details</h3>
               <p className="text-sm text-slate-600">Click a row to inspect the lead</p>
             </div>
-            <Link to="/leads" className="text-sm font-medium text-sky-700">Open leads page</Link>
+            <div className="flex gap-2">
+              <button 
+                onClick={(e) => { e.stopPropagation(); handleEdit(selectedItem); }} 
+                className="rounded-md border border-sky-300 bg-sky-100 px-4 py-2 text-sm font-medium text-sky-700 hover:bg-sky-200"
+              >
+                ✏️ Edit
+              </button>
+              <button 
+                onClick={() => setSelectedItem(null)} 
+                className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+              >
+                Close
+              </button>
+            </div>
           </div>
-          <div className="mt-4 grid gap-3 md:grid-cols-2">
+          <div className="grid gap-3 md:grid-cols-2">
             <div><span className="text-xs uppercase text-slate-500">Name</span><p className="font-medium">{selectedItem.firstName} {selectedItem.lastName}</p></div>
             <div><span className="text-xs uppercase text-slate-500">Phone</span><p className="font-medium">{selectedItem.phone}</p></div>
             <div><span className="text-xs uppercase text-slate-500">Email</span><p className="font-medium">{selectedItem.email}</p></div>

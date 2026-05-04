@@ -1,14 +1,25 @@
 const exspress = require('express');
 const routerGroup = exspress.Router();
-const {groupSchema} = require('./group.validation');
+const { groupSchema, groupUpdateSchema } = require('./group.validation');
 const validateObjectId = require('../../common/middleware/validateObjectId');
 const validate = require('../../common/middleware/validate');
+const { checkRole } = require('../../common/middleware/permissions');
 const auth = require('../../common/middleware/auth');
-const {createGroupController, getAllGroupsController, getGroupByIdController, updateGroupController, deleteGroupController} = require('./group.controller');
+const { createGroupController, getAllGroupsController, getGroupByIdController, updateGroupController, deleteGroupController } = require('./group.controller');
 
-routerGroup.post('/', auth, validate(groupSchema), createGroupController);
-routerGroup.get('/', auth, getAllGroupsController);
-routerGroup.get('/:id', auth, validateObjectId('id'), getGroupByIdController);
-routerGroup.put('/:id', auth, validateObjectId('id'), validate(groupSchema), updateGroupController);
-routerGroup.delete('/:id', auth, validateObjectId('id'), deleteGroupController);
+// Create group - Admin, Manager
+routerGroup.post('/', auth, checkRole('admin', 'manager'), validate(groupSchema), createGroupController);
+
+// Get all groups - Admin, Manager, Teacher, Student
+routerGroup.get('/', auth, checkRole('admin', 'manager', 'teacher', 'student'), getAllGroupsController);
+
+// Get single group - Admin, Manager, Teacher, Student
+routerGroup.get('/:id', auth, checkRole('admin', 'manager', 'teacher', 'student'), validateObjectId('id'), getGroupByIdController);
+
+// Update group - Admin, Manager
+routerGroup.put('/:id', auth, checkRole('admin', 'manager'), validateObjectId('id'), validate(groupUpdateSchema), updateGroupController);
+
+// Delete group - Admin only
+routerGroup.delete('/:id', auth, checkRole('admin'), validateObjectId('id'), deleteGroupController);
+
 module.exports = routerGroup;

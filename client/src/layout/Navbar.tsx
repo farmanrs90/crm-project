@@ -30,24 +30,24 @@ export default function Navbar() {
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500">{t('appName')}</p>
           <h3 className="text-lg font-semibold leading-tight">{t('adminDashboard')}</h3>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
           <button
             type="button"
             onClick={toggleTheme}
-            className="hidden rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 transition hover:bg-slate-50 sm:block dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+            className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
           >
             {theme === 'dark' ? t('dark') : t('light')}
           </button>
           <select
             value={language}
             onChange={(e) => setLanguage(e.target.value as 'en' | 'az' | 'ru')}
-            className="hidden rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-700 outline-none transition sm:block dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+            className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 outline-none transition dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
           >
             {Object.entries(languageLabels).map(([code, label]) => (
               <option key={code} value={code}>{label}</option>
             ))}
           </select>
-          <div className="hidden rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600 sm:block dark:bg-slate-800 dark:text-slate-200">
+          <div className="rounded-full bg-slate-100 px-3 py-2 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-200">
             {t('connected')}
           </div>
           <button

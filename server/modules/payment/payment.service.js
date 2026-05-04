@@ -1,11 +1,14 @@
 const Payment = require('./payment.model');
+const { syncStudentFromPaidPayment } = require('../student/student.service');
 
 const createPaymentService = async (paymentData) => {
-  return await Payment.create(paymentData);
+  const payment = await Payment.create(paymentData);
+  await syncStudentFromPaidPayment(payment);
+  return payment;
 };
 
 const getPaymentByIdService = async (paymentId) => {
-  return await Payment.findById(paymentId).populate('paymentPlan');
+  return await Payment.findById(paymentId).populate('paymentPlan lead');
 };
 
 const getAllPaymentsService = async (opts = {}) => {
@@ -35,7 +38,7 @@ const getAllPaymentsService = async (opts = {}) => {
 
   const [total, data] = await Promise.all([
     Payment.countDocuments(query),
-    Payment.find(query).populate('paymentPlan').sort(sort).skip(skip).limit(l)
+    Payment.find(query).populate('paymentPlan lead').sort(sort).skip(skip).limit(l)
   ]);
 
   const pages = Math.max(1, Math.ceil(total / l));
@@ -43,7 +46,20 @@ const getAllPaymentsService = async (opts = {}) => {
 };
 
 const updatePaymentService = async (paymentId, paymentData) => {
-  return await Payment.findByIdAndUpdate(paymentId, paymentData, { new: true }).populate('paymentPlan');
+  const existingPayment = await Payment.findById(paymentId);
+  if (!existingPayment) {
+    return null;
+  }
+
+  if (existingPayment.status === 'paid' && paymentData.status && paymentData.status !== 'paid') {
+    throw new Error('Paid payments cannot be moved back to another status');
+  }
+
+  const updatedPayment = await Payment.findByIdAndUpdate(paymentId, paymentData, { new: true }).populate('paymentPlan lead');
+  if (updatedPayment) {
+    await syncStudentFromPaidPayment(updatedPayment);
+  }
+  return updatedPayment;
 };
 
 const deletePaymentService = async (paymentId) => {

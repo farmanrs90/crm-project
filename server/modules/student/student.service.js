@@ -1,9 +1,93 @@
 const Student = require('./student.model');
 const User = require('../user/user.model');
 const Lead = require('../leads/leads.model');
+const Payment = require('../payment/payment.model');
 const crypto = require('crypto');
+const bcrypt = require('bcrypt');
 
 const generateStudentCode = () => 'S' + crypto.randomBytes(4).toString('hex').toUpperCase();
+
+const SALT_ROUNDS = 10;
+
+const getObjectId = (value) => {
+  if (!value) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'object' && value._id) return String(value._id);
+  return '';
+};
+
+const ensureStudentUser = async (lead) => {
+  const existingUser = await User.findOne({ email: lead.email });
+  if (existingUser) {
+    return existingUser;
+  }
+
+  const hashedPassword = await bcrypt.hash('Student12345', SALT_ROUNDS);
+  return await User.create({
+    name: `${lead.firstName} ${lead.lastName}`.trim(),
+    email: lead.email,
+    password: hashedPassword,
+    role: 'student'
+  });
+};
+
+const createStudentFromLead = async (lead) => {
+  if (!lead) return null;
+
+  const leadId = getObjectId(lead);
+  const leadDoc = lead && lead._id ? lead : await Lead.findById(leadId);
+  if (!leadDoc || leadDoc.status !== 'Accepted') {
+    return null;
+  }
+
+  const existingStudent = await Student.findOne({ lead: leadDoc._id });
+  if (existingStudent) {
+    return existingStudent;
+  }
+
+  const hasPaidPayment = await Payment.exists({ lead: leadDoc._id, status: 'paid' });
+  if (!hasPaidPayment) {
+    return null;
+  }
+
+  const user = await ensureStudentUser(leadDoc);
+
+  let studentCode;
+  do {
+    studentCode = generateStudentCode();
+  } while (await Student.findOne({ studentCode }));
+
+  const student = await Student.create({
+    user: user._id,
+    lead: leadDoc._id,
+    studentCode,
+    enrollmentDate: new Date(),
+    status: 'active'
+  });
+
+  await Payment.updateMany(
+    { lead: leadDoc._id, status: 'paid', student: { $exists: false } },
+    { student: student._id }
+  );
+
+  return student;
+};
+
+const syncStudentFromPaidPayment = async (payment) => {
+  if (!payment) return null;
+
+  const paymentLeadId = getObjectId(payment.lead);
+  if (!paymentLeadId || payment.status !== 'paid') {
+    return null;
+  }
+
+  const lead = await Lead.findById(paymentLeadId);
+  const student = await createStudentFromLead(lead);
+  if (student && payment._id) {
+    await Payment.findByIdAndUpdate(payment._id, { student: student._id });
+  }
+  return student;
+};
 
 const createStudentService = async (studentData) => {
   const userExists = await User.findById(studentData.user);
@@ -41,23 +125,25 @@ const getAllStudentsService = async () => {
 };
 
 const updateStudentService = async (studentId, updateData) => {
-  if (updateData.user) {
-    const userExists = await User.findById(updateData.user);
-    if (!userExists) throw new Error('Associated user not found');
-    const conflict = await Student.findOne({ user: updateData.user, _id: { $ne: studentId } });
-    if (conflict) throw new Error('Another student already linked to this user');
+  if (updateData.user || updateData.lead || updateData.studentCode) {
+    throw new Error('user, lead, and studentCode are immutable after student creation');
   }
 
-  if (updateData.lead) {
-    const leadExists = await Lead.findById(updateData.lead);
-    if (!leadExists) throw new Error('Associated lead not found');
-    const conflict = await Student.findOne({ lead: updateData.lead, _id: { $ne: studentId } });
-    if (conflict) throw new Error('Another student already linked to this lead');
-  }
+  const currentStudent = await Student.findById(studentId);
+  if (!currentStudent) return null;
 
-  if (updateData.studentCode) {
-    const conflict = await Student.findOne({ studentCode: updateData.studentCode, _id: { $ne: studentId } });
-    if (conflict) throw new Error('studentCode already in use');
+  const allowedStatusFlow = {
+    active: ['inactive', 'graduated', 'dropped'],
+    inactive: ['active', 'graduated', 'dropped'],
+    graduated: [],
+    dropped: []
+  };
+
+  if (updateData.status && updateData.status !== currentStudent.status) {
+    const allowed = allowedStatusFlow[currentStudent.status] || [];
+    if (!allowed.includes(updateData.status)) {
+      throw new Error(`Student status cannot move from ${currentStudent.status} to ${updateData.status}`);
+    }
   }
 
   return await Student.findByIdAndUpdate(studentId, updateData, { new: true }).populate('user lead');
@@ -72,5 +158,7 @@ module.exports = {
   getStudentByIdService,
   getAllStudentsService,
   updateStudentService,
-  deleteStudentService
+  deleteStudentService,
+  createStudentFromLead,
+  syncStudentFromPaidPayment
 };

@@ -103,20 +103,47 @@ export default function GroupsPage() {
         <div className="rounded-2xl border border-sky-200 bg-sky-50 p-5 shadow-sm">
           <div className="flex items-center justify-between gap-3 border-b border-sky-100 pb-4">
             <div>
-              <h3 className="text-lg font-semibold text-slate-900">Group Details</h3>
-              <p className="text-sm text-slate-600">Selected group record</p>
+              <h3 className="text-lg font-semibold text-slate-900">Qrup Detayları</h3>
+              <p className="text-sm text-slate-600">Seçilmiş qrup qeydləri</p>
             </div>
-            <Link to="/groups" className="text-sm font-medium text-sky-700">Open groups page</Link>
+            <Link to="/groups" className="text-sm font-medium text-sky-700">← Qruplara Qayıt</Link>
           </div>
           <div className="mt-4 grid gap-3 md:grid-cols-2">
-            <div><span className="text-xs uppercase text-slate-500">Name</span><p className="font-medium">{selectedItem.name}</p></div>
-            <div><span className="text-xs uppercase text-slate-500">Capacity</span><p className="font-medium">{selectedItem.capacity}</p></div>
-            <div><span className="text-xs uppercase text-slate-500">Course</span><p className="font-medium break-all">{getLabel(selectedItem.course)}</p></div>
-            <div><span className="text-xs uppercase text-slate-500">Teacher</span><p className="font-medium break-all">{getLabel(selectedItem.teacher)}</p></div>
-            <div><span className="text-xs uppercase text-slate-500">Start Date</span><p className="font-medium">{formatDate(selectedItem.startDate)}</p></div>
-            <div><span className="text-xs uppercase text-slate-500">End Date</span><p className="font-medium">{formatDate(selectedItem.endDate)}</p></div>
-            <div><span className="text-xs uppercase text-slate-500">Active</span><p className="font-medium">{selectedItem.isActive ? 'Yes' : 'No'}</p></div>
+            <div><span className="text-xs uppercase text-slate-500">Qrup Adı</span><p className="font-medium">{selectedItem.name}</p></div>
+            <div><span className="text-xs uppercase text-slate-500">Sənət</span><p className="font-medium">{selectedItem.code || '-'}</p></div>
+            <div><span className="text-xs uppercase text-slate-500">Kurs</span><p className="font-medium break-all">{getLabel(selectedItem.course)}</p></div>
+            <div><span className="text-xs uppercase text-slate-500">Müəllim</span><p className="font-medium break-all">{getLabel(selectedItem.teacher)}</p></div>
+            <div><span className="text-xs uppercase text-slate-500">Tutum</span><p className="font-medium">{selectedItem.capacity || selectedItem.maxCapacity || '-'}</p></div>
+            <div><span className="text-xs uppercase text-slate-500">Status</span><p className="font-medium capitalize">{selectedItem.isActive ? '✅ Aktiv' : '⏳ Qeyri-Aktiv'}</p></div>
+            <div><span className="text-xs uppercase text-slate-500">Başlama Tarixi</span><p className="font-medium">{formatDate(selectedItem.startDate)}</p></div>
+            <div><span className="text-xs uppercase text-slate-500">Bitmə Tarixi</span><p className="font-medium">{formatDate(selectedItem.endDate)}</p></div>
           </div>
+
+          {/* Schedule */}
+          {(selectedItem.schedule || selectedItem.schedules) && (
+            <div className="mt-6 border-t border-sky-100 pt-4">
+              <h4 className="font-semibold text-slate-900 mb-3">📅 Ders Saatları</h4>
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {typeof selectedItem.schedule === 'string' && selectedItem.schedule !== 'null' && (
+                  <div className="rounded-lg bg-white p-3 border border-slate-200">
+                    <p className="text-sm text-slate-600">{selectedItem.schedule}</p>
+                  </div>
+                )}
+                {Array.isArray(selectedItem.schedules) && selectedItem.schedules.map((sched: any, idx: number) => (
+                  <div key={idx} className="rounded-lg bg-white p-3 border border-slate-200">
+                    <p className="text-sm font-semibold text-slate-900">{sched.day || sched.dayOfWeek || `Gün ${idx + 1}`}</p>
+                    <p className="text-xs text-slate-600 mt-1">{sched.time || sched.startTime} - {sched.endTime || ''}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {!selectedItem.schedule && !selectedItem.schedules && (
+            <div className="mt-6 rounded-lg bg-amber-50 border border-amber-200 p-3">
+              <p className="text-sm text-amber-700">⚠️ Bu qrup üçün ders saatı məlumatı yoxdur</p>
+            </div>
+          )}
         </div>
       )}
     </div>

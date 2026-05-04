@@ -152,6 +152,13 @@ export default function CoursesPage() {
                     <td>{item.price}</td>
                     <td>{item.isActive ? 'Yes' : 'No'}</td>
                     <td className="flex gap-2">
+                      <Link
+                        to={`/courses/${item._id}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="rounded-md border border-blue-300 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100"
+                      >
+                        Open
+                      </Link>
                       <button className="rounded-md border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50" onClick={(e) => { e.stopPropagation(); handleEdit(item); }}>Edit</button>
                       <button className="rounded-md bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-500" onClick={(e) => { e.stopPropagation(); handleDelete(item._id); }}>Delete</button>
                     </td>
@@ -170,7 +177,7 @@ export default function CoursesPage() {
               <h3 className="text-lg font-semibold text-slate-900">Course Details</h3>
               <p className="text-sm text-slate-600">Clicking a row opens the record details here</p>
             </div>
-            <Link to="/courses" className="text-sm font-medium text-sky-700">Open courses page</Link>
+            <Link to={`/courses/${selectedItem._id}`} className="text-sm font-medium text-sky-700">Open course page</Link>
           </div>
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             <div><span className="text-xs uppercase text-slate-500">Name</span><p className="font-medium">{selectedItem.name}</p></div>

@@ -3,11 +3,15 @@ const jwt = require('jsonwebtoken');
 const User = require('../user/user.model');
 
 const SALT_ROUNDS = 10;
-const JWT_SECRET = process.env.JWT_SECRET || 'change_this_secret';
+const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET is not configured');
+}
+
 function generateToken(user) {
-  const payload = { id: user._id };
+  const payload = { id: user._id, name: user.name, email: user.email, role: user.role };
   return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 }
 
@@ -21,7 +25,7 @@ async function registerUserService({ name, email, password }) {
 
   const hashed = await bcrypt.hash(password, SALT_ROUNDS);
   const user = await User.create({ name, email, password: hashed });
-  return { id: user._id, name: user.name, email: user.email };
+  return { id: user._id, name: user.name, email: user.email, role: user.role };
 }
 
 async function loginUserService({ email, password } = {}) {
@@ -36,7 +40,7 @@ async function loginUserService({ email, password } = {}) {
   if (!ok) throw new Error('Invalid credentials');
 
   const token = generateToken(user);
-  return { token, user: { id: user._id, name: user.name, email: user.email } };
+  return { token, user: { id: user._id, name: user.name, email: user.email, role: user.role } };
 }
 
 module.exports = {

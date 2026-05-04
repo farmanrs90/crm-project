@@ -5,7 +5,7 @@ const objectId = Joi.string().regex(/^[0-9a-fA-F]{24}$/);
 const courseSchema = Joi.object({
   name: Joi.string().min(3).max(100).required(),
 
-  category: objectId.required().messages({
+  category: objectId.optional().allow('').messages({
     "string.pattern.base": "Invalid category ID",
   }),
 

@@ -6,7 +6,9 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './layout/Layout';
 import LeadsPage from './pages/leads/LeadsPage';
 import StudentsPage from './pages/students/StudentsPage';
+import StudentDetailPage from './pages/students/StudentDetailPage';
 import CoursesPage from './pages/courses/CoursesPage';
+import CourseDetailPage from './pages/courses/CourseDetailPage';
 import SettingsPage from './pages/settings/SettingsPage';
 import GroupsPage from './pages/groups/GroupsPage';
 import PaymentsPage from './pages/payments/PaymentsPage';
@@ -34,7 +36,9 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/leads" element={<LeadsPage />} />
           <Route path="/students" element={<StudentsPage />} />
+          <Route path="/students/:id" element={<StudentDetailPage />} />
           <Route path="/courses" element={<CoursesPage />} />
+          <Route path="/courses/:id" element={<CourseDetailPage />} />
           <Route path="/groups" element={<GroupsPage />} />
           <Route path="/payments" element={<PaymentsPage />} />
           <Route path="/payment-plans" element={<PaymentPlansPage />} />

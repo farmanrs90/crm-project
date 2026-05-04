@@ -10,9 +10,6 @@ const studentSchema = Joi.object({
 });
 
 const studentUpdateSchema = Joi.object({
-  user: objectId.optional().messages({ 'string.pattern.base': 'Invalid user ID' }),
-  lead: objectId.optional().messages({ 'string.pattern.base': 'Invalid lead ID' }),
-  studentCode: Joi.string().min(3).max(20).optional(),
   enrollmentDate: Joi.date().optional(),
   status: Joi.string().valid('active','inactive','graduated','dropped').optional()
 }).min(1);

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
-import { getTranslation, languageLabels } from '../localization/translations';
+import { getTranslation } from '../localization/translations';
 import { useUiStore } from '../store/uiStore';
 
 function LoginForm() {
@@ -12,9 +12,6 @@ function LoginForm() {
   const navigate = useNavigate();
   const login = useAuthStore((s) => s.login);
   const language = useUiStore((s) => s.language);
-  const theme = useUiStore((s) => s.theme);
-  const setLanguage = useUiStore((s) => s.setLanguage);
-  const toggleTheme = useUiStore((s) => s.toggleTheme);
 
   const t = (key: string) => getTranslation(language, key);
 
@@ -52,21 +49,6 @@ function LoginForm() {
           </div>
 
           <div className="relative z-10 flex h-full flex-col justify-between gap-10">
-            <div className="flex items-center justify-end gap-2">
-              <button type="button" onClick={toggleTheme} className="rounded-full border border-white/15 px-3 py-2 text-xs font-semibold text-white/90 transition hover:bg-white/10">
-                {theme === 'dark' ? t('dark') : t('light')}
-              </button>
-              <select
-                value={language}
-                onChange={(e) => setLanguage(e.target.value as 'en' | 'az' | 'ru')}
-                className="rounded-full border border-white/15 bg-white/10 px-3 py-2 text-xs font-semibold text-white outline-none"
-              >
-                {Object.entries(languageLabels).map(([code, label]) => (
-                  <option key={code} value={code} className="text-slate-900">{label}</option>
-                ))}
-              </select>
-            </div>
-
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sky-300">{t('appName')}</p>
               <h1 className="mt-4 max-w-xl text-4xl font-extrabold leading-tight sm:text-5xl">
